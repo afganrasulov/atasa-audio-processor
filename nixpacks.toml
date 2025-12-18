@@ -1,0 +1,5 @@
+[phases.setup]
+apt = ["ffmpeg", "python3", "python3-pip"]
+
+[phases.install]
+cmds = ["npm install", "pip3 install yt-dlp --break-system-packages"]
