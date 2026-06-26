@@ -1,0 +1,28 @@
+name: Deploy to Radore
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t atasa-audio-processor:migrated .
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.RADORE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.RADORE_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to Radore (save | ssh | load)
+        run: |
+          docker save atasa-audio-processor:migrated | gzip | \
+            ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            root@"${{ secrets.RADORE_HOST }}" "deploy atasa-audio-processor"
